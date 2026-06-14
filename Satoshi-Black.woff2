@@ -1,0 +1,178 @@
+/* =============================================================
+   ZENGO 2.0 — COLORS & TYPE
+   Prediction Markets marketing system. Source of truth for
+   color tokens + typographic scale. Import this in every HTML.
+   ============================================================= */
+
+/* ---- Webfonts ----------------------------------------------
+   Satoshi (display + UI) → Fontshare CDN (review build; no path
+   dependency so it works on any static host / GitHub Pages).
+   Inter (numerics + small UI) → Google Fonts.
+   For production you may switch Satoshi back to self-hosted woff2
+   in fonts/ — see the @font-face block kept below (commented).
+   ------------------------------------------------------------ */
+@import url("https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap");
+
+/* Satoshi now loads via the Fontshare <link> in index.html.
+   Self-hosted fallback (enable if you ship the fonts/ folder):
+@font-face{font-family:"Satoshi";src:url("fonts/Satoshi-Regular.woff2") format("woff2"),url("fonts/Satoshi-Regular.woff") format("woff");font-weight:400;font-style:normal;font-display:swap}
+@font-face{font-family:"Satoshi";src:url("fonts/Satoshi-Medium.woff2") format("woff2"),url("fonts/Satoshi-Medium.woff") format("woff");font-weight:500;font-style:normal;font-display:swap}
+@font-face{font-family:"Satoshi";src:url("fonts/Satoshi-Bold.woff2") format("woff2"),url("fonts/Satoshi-Bold.woff") format("woff");font-weight:700;font-style:normal;font-display:swap}
+@font-face{font-family:"Satoshi";src:url("fonts/Satoshi-Black.woff2") format("woff2"),url("fonts/Satoshi-Black.woff") format("woff");font-weight:900;font-style:normal;font-display:swap}
+*/
+
+:root {
+  /* ---------- BRAND ---------- */
+  --zg-orange:        #FE990C;   /* primary accent · CTAs · brand panels */
+  --zg-orange-press:  #E0850A;   /* pressed / darker orange */
+  --zg-yellow:        #FFE600;   /* legacy eToro yellow · secondary signup */
+  --zg-ink:           #101010;   /* near-black · dark sections + body text */
+  --zg-white:         #FFFFFF;
+  --zg-cream:         #EBE8E5;   /* warm off-white surface */
+
+  /* ---------- NEUTRALS (light context) ---------- */
+  --zg-gray-900:      #1B1B1B;
+  --zg-gray-700:      #3C3C3C;
+  --zg-gray-500:      #707482;   /* muted body / captions */
+  --zg-gray-300:      #C8C9CD;
+  --zg-gray-200:      #E3E1DE;
+  --zg-gray-100:      #F4F3F1;
+
+  /* ---------- NEUTRALS (dark context) ---------- */
+  --zg-surface-900:   #101010;   /* page dark */
+  --zg-surface-800:   #18191A;   /* card on dark */
+  --zg-surface-700:   #1F2324;   /* raised card */
+  --zg-surface-600:   #2F3436;   /* inset / thumbnail bg */
+  --zg-border-dark:   #2A2A2A;   /* hairline on dark */
+  --zg-text-dim:      #ADB3B7;   /* secondary text on dark */
+  --zg-text-faint:    #707482;   /* tertiary text on dark */
+  --zg-num-dim:       #BDBCC3;   /* large % numerals on dark */
+
+  /* ---------- MARKET / SEMANTIC ---------- */
+  --zg-yes:           #00CECB;   /* YES side · teal */
+  --zg-no:            #FF5E5B;   /* NO side · coral red */
+  --zg-positive:      #00B67A;   /* gains · Trustpilot green */
+  --zg-info:          #6CB1FF;   /* info / secondary feature panel · sky blue */
+
+  /* ---------- RADII ---------- */
+  --zg-r-pill:   90px;   /* buttons */
+  --zg-r-card:   20px;   /* feature cards */
+  --zg-r-tile:   16px;   /* prediction cards / list tiles */
+  --zg-r-sm:     8px;    /* nav signup / small controls */
+  --zg-r-img:    10px;   /* hero image / media */
+
+  /* ---------- SHADOWS ---------- */
+  --zg-shadow-nav:   0 4px 40px rgba(0,0,0,0.09);   /* sticky header */
+  --zg-shadow-menu:  0 16px 41px rgba(0,0,0,0.25);  /* dropdown / overlay */
+  --zg-shadow-card:  0 8px 30px rgba(16,16,16,0.08);
+
+  /* ---------- TYPE FAMILIES ---------- */
+  --zg-font-display: "Satoshi", "Satoshi Variable", system-ui, sans-serif;
+  --zg-font-body:    "Satoshi", "Satoshi Variable", system-ui, sans-serif;
+  --zg-font-num:     "Inter", system-ui, sans-serif;   /* prices, %, stats */
+
+  /* ---------- TRACKING ---------- */
+  --zg-track-tight:  -0.03em;   /* display + most Satoshi text */
+}
+
+/* =============================================================
+   SEMANTIC TYPE  — Satoshi display, tight tracking.
+   Display weights use 900 (Black); section heads 700; body 500.
+   Numerals (stats, prices, %) use Inter 700.
+   ============================================================= */
+
+.zg-display {              /* hero headline */
+  font-family: var(--zg-font-display);
+  font-weight: 900;
+  font-size: 88px;
+  line-height: 1.0;
+  letter-spacing: var(--zg-track-tight);
+  color: var(--zg-ink);
+}
+
+.zg-h1 {                   /* section headline */
+  font-family: var(--zg-font-display);
+  font-weight: 900;
+  font-size: 66px;
+  line-height: 1.05;
+  letter-spacing: var(--zg-track-tight);
+  color: var(--zg-ink);
+}
+
+.zg-h2 {                   /* dual-tone "Your edge." heads */
+  font-family: var(--zg-font-display);
+  font-weight: 900;
+  font-size: 52px;
+  line-height: 1.08;
+  letter-spacing: var(--zg-track-tight);
+  color: var(--zg-ink);
+}
+
+.zg-h3 {                   /* feature card titles */
+  font-family: var(--zg-font-display);
+  font-weight: 700;
+  font-size: 34px;
+  line-height: 1.0;
+  letter-spacing: var(--zg-track-tight);
+  color: var(--zg-ink);
+}
+
+.zg-h4 {                   /* card event titles */
+  font-family: var(--zg-font-display);
+  font-weight: 700;
+  font-size: 24px;
+  line-height: 1.3;
+  letter-spacing: var(--zg-track-tight);
+  color: var(--zg-ink);
+}
+
+.zg-lead {                 /* hero / section subcopy */
+  font-family: var(--zg-font-display);
+  font-weight: 500;
+  font-size: 24px;
+  line-height: 1.3;
+  letter-spacing: var(--zg-track-tight);
+  color: var(--zg-ink);
+}
+
+.zg-body {                 /* default body */
+  font-family: var(--zg-font-display);
+  font-weight: 500;
+  font-size: 16px;
+  line-height: 1.5;
+  letter-spacing: var(--zg-track-tight);
+  color: var(--zg-ink);
+}
+
+.zg-eyebrow {              /* "Live from Polymarket" labels */
+  font-family: var(--zg-font-display);
+  font-weight: 700;
+  font-size: 13px;
+  line-height: 1.2;
+  letter-spacing: 0.02em;
+  text-transform: none;
+  color: var(--zg-gray-500);
+}
+
+.zg-link {                 /* nav + footer links (Proxima→Inter sub) */
+  font-family: var(--zg-font-num);
+  font-weight: 700;
+  font-size: 16px;
+  letter-spacing: -0.01em;
+  color: var(--zg-ink);
+}
+
+.zg-num {                  /* big stat / % numerals */
+  font-family: var(--zg-font-num);
+  font-weight: 700;
+  font-size: 42px;
+  line-height: 1.1;
+  color: var(--zg-ink);
+}
+
+.zg-price {                /* market prices (Yes 62¢) */
+  font-family: var(--zg-font-display);
+  font-weight: 500;
+  font-size: 16px;
+  letter-spacing: var(--zg-track-tight);
+}

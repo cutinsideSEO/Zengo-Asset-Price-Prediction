@@ -1,197 +1,196 @@
-/* polymarket.js — live data layer.
-   Pulls REAL data at runtime and merges it into window.SOL:
-     • Spot / market data  → CoinGecko  (/coins/markets)
-     • Prediction markets   → Polymarket Gamma public-search (read-only, public)
-     • Market mood          → alternative.me Fear & Greed
-   Everything is best-effort: any failure leaves the illustrative sample in place
-   and the page degrades gracefully (per spec §8.3). The browser talks to the
-   public APIs directly here for the prototype; production routes via a BFF.            */
-(function () {
-  const CG = "https://api.coingecko.com/api/v3/coins/markets?vs_currency=usd&ids=solana&price_change_percentage=24h,7d,30d";
-  const GAMMA = "https://gamma-api.polymarket.com/public-search?q=solana&limit_per_type=20&events_status=active";
-  const FNG = "https://api.alternative.me/fng/?limit=1";
-  const PM_EVENT = "https://polymarket.com/event/";
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Solana (SOL) Price Prediction 2026-2030 | Zengo</title>
+<meta name="description" content="Solana price prediction for 2026, 2030 and beyond — algorithmic forecasts plus live market-implied odds, technical signals and the fundamentals driving SOL. Not financial advice." />
+<link rel="canonical" href="https://zengo.com/prediction-markets/solana-price-prediction/" />
+<meta name="robots" content="index, follow, max-image-preview:large" />
+<meta name="theme-color" content="#101010" />
+<meta name="author" content="Zengo" />
 
-  const money = (n, dp = 2) => "$" + Number(n).toLocaleString("en-US", { minimumFractionDigits: dp, maximumFractionDigits: dp });
-  const big = (n) => {
-    n = Number(n) || 0;
-    if (n >= 1e9) return "$" + (n / 1e9).toFixed(1) + "B";
-    if (n >= 1e6) return "$" + (n / 1e6).toFixed(1) + "M";
-    if (n >= 1e3) return "$" + (n / 1e3).toFixed(1) + "K";
-    return "$" + n.toFixed(0);
-  };
-  const pct = (x) => Math.round(Number(x) * 100);
-  const firstPrice = (m) => { try { return +JSON.parse(m.outcomePrices)[0]; } catch (e) { return NaN; } };
-  const fmtDate = (iso) => { const d = new Date(iso); return d.toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" }); };
-  const daysTo = (iso) => Math.max(0, Math.round((new Date(iso) - Date.now()) / 86400000));
+<!-- Open Graph -->
+<meta property="og:type" content="article" />
+<meta property="og:site_name" content="Zengo" />
+<meta property="og:title" content="Solana (SOL) Price Prediction 2026-2030 | Zengo" />
+<meta property="og:description" content="Algorithmic SOL forecasts plus live market-implied odds from Polymarket, technicals and the fundamentals driving Solana. Not financial advice." />
+<meta property="og:url" content="https://zengo.com/prediction-markets/solana-price-prediction/" />
+<meta property="og:locale" content="en_US" />
+<!-- Twitter -->
+<meta name="twitter:card" content="summary_large_image" />
+<meta name="twitter:title" content="Solana (SOL) Price Prediction 2026-2030 | Zengo" />
+<meta name="twitter:description" content="Algorithmic SOL forecasts plus live market-implied odds, technicals and the fundamentals driving Solana. Not financial advice." />
 
-  async function getJSON(url, ms = 8000) {
-    const ctl = new AbortController();
-    const t = setTimeout(() => ctl.abort(), ms);
-    try { const r = await fetch(url, { signal: ctl.signal }); if (!r.ok) throw new Error(r.status); return await r.json(); }
-    finally { clearTimeout(t); }
-  }
+<!-- ===================== STRUCTURED DATA (crawlable, in source) ===================== -->
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "Organization",
+  "name": "Zengo",
+  "url": "https://zengo.com",
+  "logo": "https://zengo.com/assets/logo/zengo-lockup-orange.svg",
+  "description": "Self-custodial crypto wallet with MPC security and in-app prediction markets powered by Polymarket. An eToro company.",
+  "sameAs": [
+    "https://www.etoro.com",
+    "https://twitter.com/zengo",
+    "https://www.linkedin.com/company/zengo"
+  ]
+}
+</script>
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "BreadcrumbList",
+  "itemListElement": [
+    { "@type": "ListItem", "position": 1, "name": "Home", "item": "https://zengo.com/" },
+    { "@type": "ListItem", "position": 2, "name": "Prediction Markets", "item": "https://zengo.com/prediction-markets/" },
+    { "@type": "ListItem", "position": 3, "name": "Crypto Predictions", "item": "https://zengo.com/prediction-markets/" },
+    { "@type": "ListItem", "position": 4, "name": "Solana Price Prediction", "item": "https://zengo.com/prediction-markets/solana-price-prediction/" }
+  ]
+}
+</script>
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "WebPage",
+  "name": "Solana (SOL) Price Prediction 2026-2030",
+  "url": "https://zengo.com/prediction-markets/solana-price-prediction/",
+  "description": "Solana price prediction for 2026, 2030 and beyond — algorithmic forecasts plus live market-implied odds, technical signals and the fundamentals driving SOL.",
+  "inLanguage": "en",
+  "datePublished": "2026-01-15",
+  "dateModified": "2026-06-14",
+  "isPartOf": { "@type": "WebSite", "name": "Zengo", "url": "https://zengo.com" },
+  "publisher": {
+    "@type": "Organization",
+    "name": "Zengo",
+    "logo": { "@type": "ImageObject", "url": "https://zengo.com/assets/logo/zengo-lockup-orange.svg" }
+  },
+  "about": { "@type": "Thing", "name": "Solana (SOL)" }
+}
+</script>
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "FAQPage",
+  "mainEntity": [
+    { "@type": "Question", "name": "What is the Solana price prediction for 2026?", "acceptedAnswer": { "@type": "Answer", "text": "Our model projects SOL trading roughly between $58 and $134 in 2026, with an average near $92. These are algorithmic estimates based on historical volatility and trend — not guarantees. Crypto is highly volatile and you can lose your capital." } },
+    { "@type": "Question", "name": "What is the Solana price prediction for 2030?", "acceptedAnswer": { "@type": "Answer", "text": "Longer-range projections are far more speculative. Our model's base case for 2030 is around $245, with a wide bull/bear range from roughly $155 to $420. Treat multi-year crypto forecasts as scenarios, not certainties." } },
+    { "@type": "Question", "name": "What is the Solana price prediction for 2040?", "acceptedAnswer": { "@type": "Answer", "text": "A 15-year horizon is highly speculative. Our model's long-range scenario for 2040 centers near $540, within a very wide band (roughly $300 to $980), and assumes Solana remains a top-tier network through multiple market cycles. Treat it as a scenario, not a prediction." } },
+    { "@type": "Question", "name": "Will Solana reach $500 or $1,000?", "acceptedAnswer": { "@type": "Answer", "text": "Reaching $500 would be roughly a 7-8x move from current levels; $1,000 would be around a 15x move. Whether that happens depends on adoption, network reliability (Firedancer), DePIN growth and the broader market cycle. You can also see the live market-implied probability of SOL clearing key levels in the odds module." } },
+    { "@type": "Question", "name": "What's the difference between an algorithmic forecast and market odds?", "acceptedAnswer": { "@type": "Answer", "text": "An algorithmic forecast extrapolates from past price behaviour. Market odds come from a prediction market — the price traders pay for a 'Yes' contract on an outcome, which equals the probability the market assigns it. One is a projection; the other is real money on the line. We show both, clearly labelled." } },
+    { "@type": "Question", "name": "How are these forecasts calculated?", "acceptedAnswer": { "@type": "Answer", "text": "The price targets come from an algorithmic model that reads SOL's historical volatility and trend across bear, base and bull scenarios. The probabilities come from live Polymarket markets. We update both regularly and label each clearly." } },
+    { "@type": "Question", "name": "Is Solana a good investment in 2026?", "acceptedAnswer": { "@type": "Answer", "text": "We can't answer that for you — this page is information, not financial advice. Weigh the technical signals, the fundamentals and your own risk tolerance, and consider independent professional advice before investing." } },
+    { "@type": "Question", "name": "Can I trade Solana outcomes on Zengo?", "acceptedAnswer": { "@type": "Answer", "text": "Yes — Zengo offers prediction markets inside its self-custodial wallet, powered by Polymarket, settling in USDC. Availability depends on your region; check in-app for current status where you are." } }
+  ]
+}
+</script>
+<link rel="preconnect" href="https://api.fontshare.com" crossorigin />
+<link rel="stylesheet" href="https://api.fontshare.com/v2/css?f[]=satoshi@400,500,700,900&display=swap" />
+<link rel="stylesheet" href="prediction.css" />
+</head>
+<body>
+<div id="root"></div>
 
-  window.__pmStatus = "loading";
+<!-- ===================== CRAWLABLE FALLBACK (content in source; replaced by the live app) =====================
+     In production this page is server-rendered (SSR/ISR per spec §8) so this exact markup ships in the HTML
+     response and hydrates client-side. In this prototype the same core content is provided in <noscript> so it
+     is present in the document source and fully crawlable without executing JavaScript. -->
+<noscript>
+  <article>
+    <nav aria-label="Breadcrumb">
+      <ol>
+        <li><a href="https://zengo.com/">Home</a></li>
+        <li><a href="https://zengo.com/prediction-markets/">Prediction Markets</a></li>
+        <li><a href="https://zengo.com/prediction-markets/">Crypto Predictions</a></li>
+        <li>Solana Price Prediction</li>
+      </ol>
+    </nav>
+    <h1>Solana (SOL) Price Prediction 2026-2030</h1>
+    <p>Solana (SOL) is the 6th–7th largest cryptocurrency. Our model points to a $92 average for 2026. Below you can also see
+       what traders are backing right now in live prediction markets powered by Polymarket — real money on real SOL
+       outcomes — alongside the technical signals and the fundamentals (Firedancer, DePIN, regulation) that move the
+       price. None of this is financial advice.</p>
 
-  window.loadLive = async function () {
-    const S = window.SOL;
-    let gotPrice = false, gotMarkets = false;
+    <h2>What the market is pricing in</h2>
+    <p>Live odds from real Solana prediction markets, powered by Polymarket. These reflect what traders are backing now
+       and change in real time — they are not Zengo forecasts.</p>
+    <ul>
+      <li>Will Solana reach $100 in 2026? (live odds shown on the page, resolves Dec 31, 2026)</li>
+      <li>Will Solana reach $200 in 2026? (live odds shown on the page, resolves Dec 31, 2026)</li>
+      <li>Will Solana hit a new all-time high by Dec 31, 2026? (live odds shown on the page)</li>
+    </ul>
 
-    // ---- 1) CoinGecko spot + market data ----
-    try {
-      const a = await getJSON(CG);
-      const c = Array.isArray(a) ? a[0] : a;
-      if (c && c.current_price) {
-        S.price = c.current_price;
-        S.chg24h = +(c.price_change_percentage_24h_in_currency ?? c.price_change_percentage_24h ?? 0).toFixed(2);
-        S.chg7d = c.price_change_percentage_7d_in_currency != null ? +c.price_change_percentage_7d_in_currency.toFixed(2) : S.chg7d;
-        S.chg30d = c.price_change_percentage_30d_in_currency != null ? +c.price_change_percentage_30d_in_currency.toFixed(2) : S.chg30d;
-        S.marketCap = big(c.market_cap);
-        S.vol24h = big(c.total_volume);
-        S.ath = money(c.ath);
-        S.atl = money(c.atl);
-        S.supply = (c.circulating_supply / 1e6).toFixed(1) + "M SOL";
-        S.rank = "#" + c.market_cap_rank;
-        S.updated = "just now";
-        gotPrice = true;
-      }
-    } catch (e) { /* keep sample price */ }
+    <h2>Solana price forecast 2026-2040</h2>
+    <p>Algorithmic model targets (bear / base / bull). Potential ROI is calculated against the live SOL price and shown on the page.</p>
+    <table>
+      <thead><tr><th>Year</th><th>Min</th><th>Average</th><th>Max</th></tr></thead>
+      <tbody>
+        <tr><td>2026</td><td>$58</td><td>$92</td><td>$134</td></tr>
+        <tr><td>2027</td><td>$71</td><td>$128</td><td>$190</td></tr>
+        <tr><td>2028</td><td>$96</td><td>$165</td><td>$255</td></tr>
+        <tr><td>2029</td><td>$120</td><td>$201</td><td>$330</td></tr>
+        <tr><td>2030</td><td>$155</td><td>$245</td><td>$420</td></tr>
+        <tr><td>2040</td><td>$300</td><td>$540</td><td>$980</td></tr>
+      </tbody>
+    </table>
 
-    // ---- 1b) CoinGecko price history (for the real chart) ----
-    try {
-      const [d365, d1] = await Promise.all([
-        getJSON("https://api.coingecko.com/api/v3/coins/solana/market_chart?vs_currency=usd&days=365"),
-        getJSON("https://api.coingecko.com/api/v3/coins/solana/market_chart?vs_currency=usd&days=1"),
-      ]);
-      const daily = (d365.prices || []).map((p) => p[1]);
-      const hourly = (d1.prices || []).map((p) => p[1]);
-      if (daily.length > 30) S.hist = { daily, hourly };
-    } catch (e) { /* chart falls back to synthetic */ }
+    <h2>What actually drives Solana's price</h2>
+    <ul>
+      <li><strong>Firedancer &amp; reliability</strong> — a new independent validator client aimed at ending the outage narrative.</li>
+      <li><strong>DePIN &amp; mobile</strong> — Solana's role in decentralised physical infrastructure and a mobile-first strategy.</li>
+      <li><strong>Regulation: MiCA &amp; ETFs</strong> — institutional access and EU rules that shape liquidity and volatility.</li>
+      <li><strong>Supply, staking &amp; inflation</strong> — issuance, the ~65% staking ratio and fee-burn dynamics.</li>
+      <li><strong>BTC correlation &amp; cycles</strong> — how much SOL still moves with the broader market.</li>
+      <li><strong>Ecosystem &amp; app revenue</strong> — DEX volume, stablecoin settlement and real on-chain fee revenue.</li>
+    </ul>
 
-    // ---- 1c) If the spot call failed but history loaded, derive price + changes
-    //          from the series so the snapshot stays consistent with the live
-    //          chart/markets (never show a stale sample price next to live data). ----
-    if (!gotPrice && S.hist && S.hist.daily.length > 31) {
-      const d = S.hist.daily, h = S.hist.hourly || [];
-      const last = d[d.length - 1];
-      const pc = (a, b) => (b ? +(((a - b) / b) * 100).toFixed(2) : 0);
-      S.price = last;
-      S.chg24h = h.length > 2 ? pc(h[h.length - 1], h[0]) : pc(last, d[d.length - 2]);
-      S.chg7d = pc(last, d[d.length - 8]);
-      S.chg30d = pc(last, d[d.length - 31]);
-      S.updated = "just now";
-      gotPrice = true; // derived from history
-    }
-    const priceLive = gotPrice;
+    <h2>Solana price prediction — FAQ</h2>
+    <h3>What is the Solana price prediction for 2026?</h3>
+    <p>Our model projects SOL trading roughly between $58 and $134 in 2026, with an average near $92. These are algorithmic estimates based on historical volatility and trend — not guarantees. Crypto is highly volatile and you can lose your capital.</p>
+    <h3>What is the Solana price prediction for 2030?</h3>
+    <p>Our model's base case for 2030 is around $245, with a wide bull/bear range from roughly $155 to $420. Treat multi-year crypto forecasts as scenarios, not certainties.</p>
+    <h3>What is the Solana price prediction for 2040?</h3>
+    <p>A 15-year horizon is highly speculative. Our model's long-range scenario for 2040 centers near $540, within a very wide band (roughly $300 to $980), and assumes Solana remains a top-tier network through multiple market cycles. Treat it as a scenario, not a prediction.</p>
+    <h3>Will Solana reach $500 or $1,000?</h3>
+    <p>Reaching $500 would be a roughly 7-8x move from current levels; $1,000 around a 15x move. It depends on adoption, network reliability (Firedancer), DePIN growth and the broader market cycle.</p>
+    <h3>What's the difference between an algorithmic forecast and market odds?</h3>
+    <p>An algorithmic forecast extrapolates from past price behaviour. Market odds come from a prediction market — the price traders pay for a 'Yes' contract, which equals the probability the market assigns it. One is a projection; the other is real money on the line.</p>
+    <h3>How are these forecasts calculated?</h3>
+    <p>The price targets come from an algorithmic model that reads SOL's historical volatility and trend across bear, base and bull scenarios. The probabilities come from live Polymarket markets.</p>
+    <h3>Is Solana a good investment in 2026?</h3>
+    <p>This page is information, not financial advice. Weigh the technical signals, the fundamentals and your own risk tolerance, and consider independent professional advice before investing.</p>
+    <h3>Can I trade Solana outcomes on Zengo?</h3>
+    <p>Yes — Zengo offers prediction markets inside its self-custodial wallet, powered by Polymarket, settling in USDC. Availability depends on your region; check in-app.</p>
 
-    // Live markets + Fear & Greed only apply when we have a live price; otherwise
-    // everything stays on the coherent sample data (never mix live + stale).
-    if (priceLive) {
-      const mood0 = Math.max(5, Math.min(95, Math.round(50 + (S.chg30d || 0) * 0.9)));
-      S.mood = mood0;
-      S.moodLabel = mood0 < 25 ? "Extreme Fear" : mood0 < 45 ? "Fear" : mood0 < 55 ? "Neutral" : mood0 < 75 ? "Greed" : "Extreme Greed";
-    }
+    <h2>Explore other coin forecasts</h2>
+    <ul>
+      <li><a href="https://zengo.com/prediction-markets/bitcoin-price-prediction/">Bitcoin (BTC) price prediction</a></li>
+      <li><a href="https://zengo.com/prediction-markets/ethereum-price-prediction/">Ethereum (ETH) price prediction</a></li>
+      <li><a href="https://zengo.com/prediction-markets/xrp-price-prediction/">XRP price prediction</a></li>
+      <li><a href="https://zengo.com/prediction-markets/dogecoin-price-prediction/">Dogecoin (DOGE) price prediction</a></li>
+      <li><a href="https://zengo.com/prediction-markets/cardano-price-prediction/">Cardano (ADA) price prediction</a></li>
+    </ul>
 
-    // ---- 2) Polymarket markets ----
-    if (priceLive) try {
-      const j = await getJSON(GAMMA);
-      const events = j.events || [];
-      const ev = (slug) => events.find((e) => e.slug === slug);
+    <p><strong>Not financial advice.</strong> Forecasts and probabilities are for general information only and are not
+       investment advice. Cryptocurrency is highly volatile and you may lose your capital. Algorithmic forecasts are
+       estimates; market-implied probabilities (data: Polymarket) change constantly. Zengo is a self-custodial wallet
+       and an eToro company.</p>
+  </article>
+</noscript>
 
-      const e2026 = ev("what-price-will-solana-hit-before-2027") ||
-        events.find((e) => /hit.*(2026|before-2027)/i.test(e.slug) && (e.markets || []).length > 6);
-      const eath = ev("solana-all-time-high-by") || events.find((e) => /all-time-high/i.test(e.slug));
+<script src="https://unpkg.com/react@18.3.1/umd/react.development.js" integrity="sha384-hD6/rw4ppMLGNu3tX5cjIb+uRZ7UkRJ6BPkLpg4hAu/6onKUg4lLsHAs9EBPT82L" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.development.js" integrity="sha384-u6aeetuaXnQ38mYT8rp6sbXaQe3NL9t+IBXmnYxwkUI2Hw4bsp2Wvmx4yRQF1uAm" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/@babel/standalone@7.29.0/babel.min.js" integrity="sha384-m08KidiNqLdpJqLq95G/LEi8Qvjl/xUYll3QILypMoQ65QorJ9Lvtp2RXYGBFj1y" crossorigin="anonymous"></script>
 
-      let ups = [];
-      let evVol = 0, evEnd = "2027-01-01T05:00:00Z";
-      if (e2026) {
-        evVol = e2026.volume || 0; evEnd = e2026.endDate || evEnd;
-        ups = (e2026.markets || [])
-          .filter((m) => (m.groupItemTitle || "").includes("↑"))
-          .map((m) => {
-            const ask = m.bestAsk != null ? +m.bestAsk : null;
-            const bid = m.bestBid != null ? +m.bestBid : null;
-            const last = firstPrice(m);
-            const spread = (ask != null && bid != null) ? (ask - bid) : 1;
-            // probability = order-book midpoint when the book is sane, else last/outcome price
-            const mid = (ask != null && bid != null && spread <= 0.5) ? (ask + bid) / 2 : last;
-            return {
-              strike: parseInt((m.groupItemTitle || "").replace(/[^0-9]/g, ""), 10),
-              yes: mid, ask, bid, spread,
-              vol: +m.volumeNum || 0,
-              slug: m.slug,
-            };
-          })
-          .filter((x) => x.strike && isFinite(x.yes) && x.yes > 0.004 && x.yes < 0.99)
-          .sort((a, b) => a.strike - b.strike);
-      }
-      const atStrike = (target) => {
-        if (!ups.length) return null;
-        return ups.reduce((best, x) => Math.abs(x.strike - target) < Math.abs(best.strike - target) ? x : best);
-      };
-
-      // ATH-by-Dec-2026 market
-      let athMkt = null;
-      if (eath) {
-        athMkt = (eath.markets || []).find((m) => /Dec.*2026|December 31, 2026/i.test(m.groupItemTitle || m.question || ""))
-          || (eath.markets || []).sort((a, b) => (b.volumeNum || 0) - (a.volumeNum || 0))[0];
-      }
-
-      if (ups.length >= 4) {
-        const resolves = fmtDate(evEnd), days = daysTo(evEnd);
-        // Only feature genuinely tradeable markets (real volume + sane spread) so we
-        // never surface a dead sub-market with a stale price and an empty order book.
-        const liquid = ups.filter((x) => x.vol > 0 && x.spread <= 0.2);
-        const pool = liquid.length >= 4 ? liquid : ups;
-        // Buy prices match Polymarket exactly: Buy Yes = best ask; Buy No = 1 - Yes best bid.
-        const buyYesC = (x) => x.ask != null ? Math.round(x.ask * 100) : pct(x.yes);
-        const buyNoC = (x) => x.bid != null ? Math.round((1 - x.bid) * 100) : 100 - pct(x.yes);
-        const mkReach = (x) => ({ q: `Will Solana reach $${x.strike} in 2026?`, yes: pct(x.yes), buyYes: buyYesC(x), buyNo: buyNoC(x), vol: big(x.vol), resolves, days, slug: (e2026 && e2026.slug) || "" });
-
-        // featured cards = the most relevant near-the-money liquid strikes (lowest strikes
-        // = closest to spot = highest, most meaningful probabilities), shown low→high
-        const featured = [...pool].sort((a, b) => a.strike - b.strike).slice(0, 2);
-        const cards = featured.map(mkReach);
-        if (athMkt) {
-          const aYes = firstPrice(athMkt);
-          cards.push({ q: "Will Solana hit a new all-time high by Dec 31, 2026?", yes: pct(aYes),
-            buyYes: athMkt.bestAsk != null ? Math.round(+athMkt.bestAsk * 100) : pct(aYes),
-            buyNo: athMkt.bestBid != null ? Math.round((1 - +athMkt.bestBid) * 100) : 100 - pct(aYes),
-            vol: big(athMkt.volumeNum || 0), resolves: "Dec 31, 2026", days: daysTo("2027-01-01"), slug: athMkt.slug || "" });
-        }
-        // ladder = the live liquid curve across strikes, sampled to ~6 rows
-        const ascending = [...pool].sort((a, b) => a.strike - b.strike);
-        const sample = (arr, n) => { if (arr.length <= n) return arr; const out = []; const step = (arr.length - 1) / (n - 1); for (let i = 0; i < n; i++) out.push(arr[Math.round(i * step)]); return out; };
-        const rows = sample(ascending, 6).map((x) => ({ strike: "$" + x.strike, pct: pct(x.yes) }));
-        // enforce the no-arbitrage bound: P(reach higher price) ≤ P(reach lower price)
-        let cap = 100;
-        rows.forEach((r) => { r.pct = Math.min(r.pct, cap); cap = r.pct; });
-
-        if (cards.length >= 3 && rows.length >= 4) {
-          S.markets = cards;
-          S.ladder = {
-            q: "Will Solana reach these levels in 2026?",
-            sub: "Market-implied chance SOL trades at or above each level at some point in 2026.",
-            vol: big(evVol) + " traded",
-            resolves,
-            rows,
-          };
-          S.compare = { pct: cards[0].yes, label: cards[0].q.replace(/^Will Solana /, "").replace(/\?$/, "").replace(/^reach/, "reaches") };
-          S.pmEventUrl = PM_EVENT + ((e2026 && e2026.slug) || "");
-          gotMarkets = true;
-        }
-      }
-    } catch (e) { /* keep sample markets */ }
-
-    // ---- 3) Fear & Greed (overrides the trend-derived baseline) ----
-    if (priceLive) try {
-      const f = await getJSON(FNG);
-      const d = f.data && f.data[0];
-      if (d && d.value) { S.mood = +d.value; S.moodLabel = d.value_classification; }
-    } catch (e) { /* keep trend-derived mood */ }
-
-    window.__pmStatus = (priceLive && gotMarkets) ? "live" : "sample";
-    return { price: gotPrice, markets: gotMarkets };
-  };
-})();
+<script src="resources.js"></script>
+<script src="data.js"></script>
+<script src="polymarket.js"></script>
+<script type="text/babel" src="icons.jsx"></script>
+<script type="text/babel" src="viz.jsx"></script>
+<script type="text/babel" src="modulesA.jsx"></script>
+<script type="text/babel" src="modulesB.jsx"></script>
+<script type="text/babel" src="modulesC.jsx"></script>
+<script type="text/babel" src="app.jsx"></script>
+</body>
+</html>
